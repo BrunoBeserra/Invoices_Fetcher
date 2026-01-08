@@ -16,11 +16,11 @@ import base64
 from datetime import datetime
 
 
-def gmail_authenticate(scopes: list):
+def gmail_authenticate(scopes: list, token_path, credentials_path):
     creds = None
 
-    if os.path.exists("token.json"):
-        with open("token.json", "rb") as token:
+    if os.path.exists(token_path):
+        with open(token_path, "rb") as token:
             creds = pickle.load(token)
     
     if not creds or not creds.valid:
@@ -28,11 +28,11 @@ def gmail_authenticate(scopes: list):
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                "credentials.json", scopes
+                credentials_path, scopes
             )
             creds = flow.run_local_server(port=0)
 
-        with open("token.json", "wb") as token:
+        with open(token_path, "wb") as token:
             pickle.dump(creds, token)
 
     return creds
