@@ -3,3 +3,4 @@ google-auth==2.29.0
 google-auth-oauthlib==1.2.0
 python-dotenv==1.0.1
 tqdm==4.66.4
+boto3==1.28.39

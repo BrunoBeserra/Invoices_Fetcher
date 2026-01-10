@@ -53,14 +53,10 @@ def download_gdrive_files(service, files, output_dir):
 
         try:
             request = service.files().get_media(fileId=file_id)
-            #file_data = request.execute()
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             safe_filename = f"{timestamp}_{file_name}"
             file_path = os.path.join(output_dir, safe_filename)
-
-            #with open(file_path, "wb") as out_f:
-            #    out_f.write(file_data)
 
             with open(file_path, "wb") as f:
                 downloader = MediaIoBaseDownload(f, request)
@@ -72,4 +68,35 @@ def download_gdrive_files(service, files, output_dir):
         except Exception as e:
             print(f"Failed to download {file_id} ({file_name}): {e}")
 
-    
+def download_s3_files(s3_client, bucket_name, objects, output_dir):
+    if not objects:
+        print("No S3 files to download.")
+        return
+
+    for each in objects:
+        key = each.get("Key")
+        size = each.get("Size", 0)
+        if not key:
+            print(f"Skipping invalid object: {each}")
+            continue
+
+        if not key or key.endswith("/") or size == 0:
+            continue
+        
+        try:
+            response = s3_client.get_object(Bucket=bucket_name, Key=key)
+            file_data = response['Body'].read()
+
+            
+
+            filename = os.path.basename(key)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            safe_filename = f"{timestamp}_{filename}"
+            file_path = os.path.join(output_dir, safe_filename)
+
+            with open(file_path, "wb") as f:
+                f.write(file_data)
+
+            print(f"Saved: {file_path}")
+        except Exception as e:
+            print(f"Failed to download {key} from S3: {e}")

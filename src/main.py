@@ -12,11 +12,20 @@ from tracker import (
     save_processed_files_id
 )
 
-from gdrive_source import get_drive_service, list_gdrive_files_in_folder, gdrive_authenticate
+from gdrive_source import (
+    get_drive_service, 
+    list_gdrive_files_in_folder, 
+    gdrive_authenticate
+)
+
+from aws_s3_source import authenticate_s3, list_s3_objects
+import boto3
 from config import load_config, ConfigError
-from invoice_downloader import download_gmail_attachments, download_gdrive_files
-
-
+from invoice_downloader import (
+    download_gmail_attachments, 
+    download_gdrive_files, 
+    download_s3_files
+)
 
 def main():
     try:
@@ -72,7 +81,37 @@ def main():
     
     if new_gdrive_files:
         print("Download of Invoices in Drive Complete!")
+    
+    # AWS S3 Process
+    s3_client = authenticate_s3(config["aws_access_key_id"], 
+        config["aws_secret_access_key"], 
+        config["aws_s3_region_name"])
+    
+    if s3_client:
+        print("AWS S3 Client authenticated.")
 
+    s3_objects = list_s3_objects(s3_client, config["aws_s3_bucket_name"])
+    print(f"Found {len(s3_objects)} objects in S3 bucket.")
+
+    processed_s3_keys = load_processed_files_ids(config["aws_s3_tracker_path"])
+
+    new_s3_objects = [obj for obj in s3_objects if obj["Key"] not in processed_s3_keys]
+    
+    for obj in s3_objects:
+        print(f"Object Key: {obj['Key']}, Size: {obj['Size']} bytes")
+    
+    download_s3_files(
+        s3_client,
+        config["aws_s3_bucket_name"],
+        new_s3_objects,
+        config["aws_s3_invoice_dir"]
+    )
+
+    for each in new_s3_objects:
+        save_processed_files_id(config["aws_s3_tracker_path"], each["Key"])
+
+    if new_s3_objects:
+        print("Download of Invoices in AWS S3 Complete!")
 
 if __name__ == "__main__":
     main()
