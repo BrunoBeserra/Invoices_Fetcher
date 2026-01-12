@@ -3,3 +3,11 @@ venv/
 credentials.json
 token.json
 __pycache__/
+credentials_drive.json
+token_drive.json
+token_gmail.json
+metadata/
+gmail_credential.json
+invoices/aws/
+invoices/gdrive/
+invoices/gmail/

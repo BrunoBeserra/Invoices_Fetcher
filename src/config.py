@@ -15,6 +15,8 @@ def load_config():
     gmail_credentials_path = os.getenv("GMAIL_CREDENTIALS")
     gmail_invoice_folder = os.getenv("GMAIL_INVOICE_FOLDER")
     metadata_processed_emails = os.getenv("METADATA_PROCESSED_EMAILS")
+    trust_senders_file = os.getenv("GMAIL_TRUST_SENDERS")
+
 
     if not gmail_scopes:
         raise ConfigError(
@@ -52,7 +54,17 @@ def load_config():
             f"{gmail_credentials_path} not found in project root. "
             "Download it from Google Cloud Console."
         )
+    
+    # Gmail - Trust Senders Configuration
+    trust_senders_path = Path(trust_senders_file)
+    trust_senders_path.parent.mkdir(exist_ok=True)
 
+    if not trust_senders_path.exists():
+        trust_senders_path.write_text(
+            '{ "trusted_senders": [] }',
+            encoding="utf-8"
+        )
+    
     # Drive Configuration
     drive_folder_id = os.getenv("DRIVE_INVOICE_FOLDER_ID")
     drive_scopes = os.getenv("DRIVE_SCOPES")
@@ -151,6 +163,7 @@ def load_config():
         "gmail_credentials_file": gmail_credentials_file,
         "gmail_invoice_dir": gmail_invoice_path,
         "gmail_tracker_path": gmail_tracker_path,
+        "gmail_trust_senders_path": trust_senders_path,
         "gdrive_folder_id": drive_folder_id,
         "gdrive_scopes": [drive_scopes],
         "gdrive_invoice_dir": gdrive_invoice_path,

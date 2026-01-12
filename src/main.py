@@ -1,8 +1,10 @@
-import os
 from gmail_source import (
     gmail_authenticate, 
     get_gmail_service, 
-    search_invoice_emails
+    search_invoice_emails,
+    load_trusted_senders,
+    get_email_sender,
+    is_trusted_sender
 )
 
 from tracker import (
@@ -19,7 +21,6 @@ from gdrive_source import (
 )
 
 from aws_s3_source import authenticate_s3, list_s3_objects
-import boto3
 from config import load_config, ConfigError
 from invoice_downloader import (
     download_gmail_attachments, 
@@ -46,6 +47,7 @@ def main():
     gmail_service = get_gmail_service(gmail_creds)
 
     processed_email_ids = load_processed_email_ids(config["gmail_tracker_path"])
+    trusted_senders = load_trusted_senders(config["gmail_trust_senders_path"])
     messages = search_invoice_emails(gmail_service)
 
     print(f"Found {len(messages)} messages.")
@@ -53,6 +55,12 @@ def main():
         message_id = msg["id"]
 
         if message_id in processed_email_ids:
+            continue
+
+        sender = get_email_sender(gmail_service, message_id).lower()
+
+        if not is_trusted_sender(sender, trusted_senders):
+            print(f"Skipping untrusted sender: {sender}")
             continue
 
         download_gmail_attachments(gmail_service, msg["id"], config["gmail_invoice_dir"])
@@ -96,9 +104,6 @@ def main():
     processed_s3_keys = load_processed_files_ids(config["aws_s3_tracker_path"])
 
     new_s3_objects = [obj for obj in s3_objects if obj["Key"] not in processed_s3_keys]
-    
-    for obj in s3_objects:
-        print(f"Object Key: {obj['Key']}, Size: {obj['Size']} bytes")
     
     download_s3_files(
         s3_client,

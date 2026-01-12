@@ -12,8 +12,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import pickle
 import os
-import base64
-from datetime import datetime
+import json
 
 
 def gmail_authenticate(scopes: list, token_path, credentials_path):
@@ -54,13 +53,40 @@ def search_invoice_emails(service, max_results=20):
 
     return result.get("messages", [])
 
-# def get_message_metadata(service, message_id):
-#     message = service.users().messages().get(
-#         userId="me",
-#         id=message_id,
-#         format="metadata",
-#         metadataHeaders=["Subject", "From", "Date"]
-#     ).execute()
+def load_trusted_senders(filepath):
+    if not os.path.exists(filepath):
+        return set()
 
-#     headers = message["payload"]["headers"]
-#     return {h["name"]: h["value"] for h in headers}
+    with open(filepath, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    trusted_senders = set(data.get("trusted_senders", []))
+    return {each.lower() for each in trusted_senders}
+
+def get_email_sender(service, message_id):
+    message = service.users().messages().get(
+        userId="me",
+        id=message_id,
+        format="metadata",
+        metadataHeaders=["From"]
+    ).execute()
+
+    headers = message.get("payload", {}).get("headers", [])
+    for header in headers:
+        if header["name"].lower() == "from":
+            return header["value"].lower()
+
+    return ""
+
+def is_trusted_sender(sender, trusted_senders):
+    if not sender:
+        return False
+
+    for trusted in trusted_senders:
+        if trusted.startswith("@") and sender.endswith(trusted):
+            return True
+
+        if trusted in sender:
+            return True
+        
+    return False
