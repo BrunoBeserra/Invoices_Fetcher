@@ -36,6 +36,7 @@ This project automates fetching invoices from multiple sources and saving them l
 
 ## Project Structure
 
+```
 Invoices_Fetcher/
 │
 ├── invoices/
@@ -62,6 +63,7 @@ Invoices_Fetcher/
 ├── credentials.json
 ├── requirements.txt
 └── setup.ps1
+```
 
 ---
 
@@ -75,7 +77,7 @@ python -m venv venv
 .\venv\Scripts\activate
 pip install -r requirements.txt 
 ```
-Or run setup.ps1 to automatically set up the environment
+Or run `setup.ps1` to automatically set up the environment
 
 ### 2. Add Credentials
 
@@ -86,6 +88,7 @@ Or run setup.ps1 to automatically set up the environment
 ### 3. Configure Trusted Senders in Metadata folder
 
 Create or edit metadata/trusted_gmail_senders.json
+```
 Example:
 {
   "trusted_senders": [
@@ -93,6 +96,7 @@ Example:
     "@companyb.com"
   ]
 }
+```
 
 ### 4. Configure .env file
 
